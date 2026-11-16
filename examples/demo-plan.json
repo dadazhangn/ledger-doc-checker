@@ -1,0 +1,56 @@
+{
+  "version": 1,
+  "ledger": {
+    "sheet": "对象台账",
+    "headerRow": 1,
+    "keyColumn": "A"
+  },
+  "identityLabel": "对象名称",
+  "bindings": [
+    {
+      "document": "演示说明-甲.docx",
+      "key": "演示对象甲"
+    },
+    {
+      "document": "演示说明-乙.docx",
+      "key": "演示对象乙"
+    }
+  ],
+  "fields": [
+    {
+      "sourceColumn": "B",
+      "targetLabel": "版本",
+      "comparison": "exact",
+      "required": true
+    },
+    {
+      "sourceColumn": "C",
+      "targetLabel": "出具日期",
+      "comparison": "date",
+      "required": true
+    }
+  ],
+  "details": {
+    "sheet": "明细",
+    "headerRow": 1,
+    "objectColumn": "A",
+    "keyColumn": "B",
+    "targetKeyHeader": "条目名称",
+    "columns": [
+      {
+        "sourceColumn": "C",
+        "targetHeader": "数量",
+        "comparison": "number",
+        "tolerance": 0,
+        "required": true
+      },
+      {
+        "sourceColumn": "D",
+        "targetHeader": "状态",
+        "comparison": "exact",
+        "required": true
+      }
+    ]
+  },
+  "allowCachedFormula": false
+}

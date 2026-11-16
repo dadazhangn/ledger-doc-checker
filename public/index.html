@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>台账核对 · Ledger Check</title>
+  <link rel="stylesheet" href="/style.css">
+  <script src="/app.js" type="module"></script>
+</head>
+<body>
+  <aside class="sidebar">
+    <a class="brand" href="/" aria-label="台账核对首页"><span class="brand-icon">≍</span><span>台账核对<small>LEDGER CHECK</small></span></a>
+    <div class="nav-caption">工作区</div>
+    <a class="nav active" href="#files"><span>▤</span>文档核对<span class="nav-count">01</span></a>
+    <a class="nav" href="#rules"><span>⌘</span>核对方案</a>
+    <a class="nav" href="#results"><span>▥</span>结果报告</a>
+    <div class="sidebar-note"><span class="local-dot"></span>在本机处理<small>无需模型密钥<br>核对过程中保持源文件原样</small></div>
+    <div class="sidebar-version">v0.1.0 · 演示验证版</div>
+  </aside>
+  <main>
+    <div class="topline"><span>工作区 <span class="slash">/</span> 新建核对</span><span class="local-badge"><span class="local-dot"></span>本地运行</span></div>
+    <header class="page-header"><div><div class="eyebrow">EXCEL → WORD</div><h1>每一处差异，都有据可查。</h1><p>以 Excel 台账为基准，核对 Word 字段与明细，直接回到差异所在的位置。</p></div><button id="load-demo" class="button secondary">体验演示 <span>↗</span></button></header>
+    <div class="steps"><a href="#files"><b>1</b>选择资料</a><span></span><a href="#rules"><b>2</b>确认核对方案</a><span></span><a href="#results"><b>3</b>查看差异</a></div>
+    <div id="notice" class="notice" role="status" hidden></div>
+    <div id="error" class="error-banner" role="alert" hidden></div>
+    <section id="files" class="card">
+      <div class="section-heading"><div><div class="section-kicker">01 / 资料</div><h2>把需要核对的文件放在一起</h2></div><span class="muted">.xlsx + .docx</span></div>
+      <div class="upload-grid">
+        <label class="upload-box" for="ledger-file"><span class="file-icon excel">X</span><strong>选择 Excel 台账</strong><span>一份台账，可包含对象表与明细表</span><span id="ledger-name" class="file-selection">点击选择 .xlsx 文件</span><input id="ledger-file" type="file" accept=".xlsx"></label>
+        <label class="upload-box" for="word-files"><span class="file-icon word">W</span><strong>选择 Word 文档</strong><span>支持一次核对多份文档</span><span id="word-names" class="file-selection">点击选择 1–30 份 .docx 文件</span><input id="word-files" type="file" accept=".docx" multiple></label>
+      </div>
+      <div class="section-footer"><span>文件仅在本机内存中处理 · 单文件 ≤ 12 MB · 合计 ≤ 48 MB</span><button id="inspect" class="button secondary" disabled>读取资料 <span>→</span></button></div>
+      <div id="file-problems" hidden></div>
+    </section>
+    <section id="rules" class="card" hidden>
+      <div class="section-heading"><div><div class="section-kicker">02 / 方案</div><h2>确认每一份文档，对应哪一条台账</h2></div><div class="button-group"><label class="button subtle" for="import-plan">导入方案<input type="file" id="import-plan" accept=".json"></label><button class="button subtle" id="export-plan">保存方案</button></div></div>
+      <div class="form-grid"><label>对象工作表<select id="object-sheet"></select></label><label>表头所在行<input id="object-header" type="number" min="1" max="10000" value="1"></label><label>台账对象关联列<select id="object-key"></select></label><label>Word 对象字段标签<input id="identity-label" list="word-labels" placeholder="选择或输入字段标签"></label></div>
+      <datalist id="word-labels"></datalist>
+      <div id="ledger-preview" class="table-scroll preview-table"></div>
+      <div id="bindings" class="bindings"></div>
+      <details class="mapping-section" open><summary>固定字段 <span>按标签定位 Word 中的相邻值</span></summary><div id="field-rules"></div><button id="add-field" class="button subtle">＋ 添加字段</button></details>
+      <details class="mapping-section"><summary>明细表 <span>按唯一条目匹配，检查缺项、多项与值</span></summary><label class="check-label"><input type="checkbox" id="details-enabled">同时核对明细表</label><div id="detail-settings" hidden><div class="form-grid"><label>明细工作表<select id="detail-sheet"></select></label><label>表头所在行<input id="detail-header" type="number" min="1" max="10000" value="1"></label><label>所属对象列<select id="detail-object"></select></label><label>明细唯一关联列<select id="detail-key"></select></label><label>Word 明细关联列表头<input id="detail-target-key" placeholder="输入 Word 明细的关联列表头"></label></div><p class="help-text">匹配 Word 中首行为表头、列名完整对应的唯一表格；核对该对象在台账中的全部明细行。</p><div id="detail-columns"></div><button id="add-detail-column" class="button subtle">＋ 添加比较列</button></div></details>
+      <details class="mapping-section"><summary>读取范围与特殊值</summary><p class="help-text">检查正文段落和普通表格。页眉页脚、图片、文本框、嵌套表格及纵向合并表格不在首版支持范围；定位到段落或表格单元格，不推算页码。隐藏和筛选掉的台账行仍参与核对。</p><label class="check-label"><input type="checkbox" id="cached-formula">允许采用 Excel 已保存的公式缓存值（本工具不重算，缓存可能过期）</label></details>
+      <div class="section-footer"><span id="scope-summary">请确认对应关系与比较规则。</span><button id="run-check" class="button primary">开始核对 <span>→</span></button></div>
+    </section>
+    <div id="progress" class="progress-panel" aria-live="polite" hidden><span class="spinner"></span><div><strong id="progress-title">正在处理</strong><small id="progress-text">任务正在运行…</small></div><button id="cancel" class="button secondary">取消任务</button></div>
+    <section id="results" hidden>
+      <div class="result-heading"><div><div class="section-kicker">03 / 结果</div><h2 id="result-title">核对结果</h2><p id="result-subtitle"></p></div><div class="button-group"><button id="download-json" class="button secondary">导出 JSON</button><button id="download-html" class="button primary">导出报告 ↗</button></div></div>
+      <div id="stale" class="notice" hidden>资料或规则已变更。下面保留的是上一次核对结果，请重新核对后采用。</div>
+      <div class="stats"><div><span>已核对一致</span><strong id="count-equal">0</strong><small>按所选规则</small></div><div class="stat-difference"><span>发现差异</span><strong id="count-different">0</strong><small>可查看两边依据</small></div><div><span>无法核对</span><strong id="count-unverifiable">0</strong><small>需处理后复检</small></div><div><span>文件错误</span><strong id="count-errors">0</strong><small>读取失败不计通过</small></div></div>
+      <div class="card result-card"><div class="result-toolbar"><div class="filter-group" id="result-filters"><button data-filter="issues" class="selected">待处理</button><button data-filter="all">全部</button><button data-filter="different">差异</button><button data-filter="unverifiable">无法核对</button><button data-filter="equal">一致</button></div><input id="result-search" type="search" placeholder="搜索文档或字段" aria-label="搜索核对结果"></div><div id="findings"></div><div class="report-footer" id="report-provenance"></div></div>
+    </section>
+    <section id="empty-state" class="empty-state"><span class="empty-mark">✓</span><div><strong>从一份台账开始</strong><p>先读取资料，再确认字段映射。也可以体验预置了四处差异的虚构演示。</p></div></section>
+    <footer class="page-footer"><span>LEDGER CHECK</span><span>只对配置范围给出结论 · 保留原值与来源</span></footer>
+  </main>
+</body>
+</html>
