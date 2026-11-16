@@ -1,3 +1,5 @@
+import { initWordMode } from './word-mode.js';
+
 const $ = (id) => document.getElementById(id);
 const state = { token: '', batch: null, batchId: '', plan: null, detailDraft: null, busy: false, job: '', resultJob: '', report: null, stale: false, filter: 'issues', search: '' };
 const cellText = (cell) => cell?.value?.kind === 'formula' ? `=${cell.value.formula}` : cell?.value?.text ?? '';
@@ -24,6 +26,7 @@ function setBusy(busy, title = '') {
   $('progress').hidden = !busy;
   $('progress-title').textContent = title;
   updateButtons();
+  document.dispatchEvent(new Event('ledger-busy-change'));
 }
 function markStale() {
   if (state.report) { state.stale = true; $('stale').hidden = false; }
@@ -234,5 +237,20 @@ $('import-plan').addEventListener('change', async () => {
   try { const file = $('import-plan').files[0]; if (!file) return; if (file.size > 100000) throw new Error('方案文件超过 100 KB。'); const raw = JSON.parse(await file.text()); const { plan } = await post('/api/plan/validate', { plan: raw }); state.plan = plan; markStale(); renderRules(); notice('方案已载入，请核对本批文件和对应关系。'); } catch (error) { showError(error); } finally { $('import-plan').value = ''; }
 });
 for (const format of ['html', 'json']) $(`download-${format}`).addEventListener('click', async () => { try { const response = await api(`/api/jobs/${state.resultJob}/report?format=${format}`); saveBlob(await response.blob(), `台账核对报告.${format}`); } catch (error) { showError(error); } });
-try { const session = await (await fetch('/api/session')).json(); if (!session.token) throw new Error('本地服务初始化失败。'); state.token = session.token; } catch (error) { showError(error); $('load-demo').disabled = true; }
+let sessionReady = false;
+try { const session = await (await fetch('/api/session')).json(); if (!session.token) throw new Error('本地服务初始化失败。'); state.token = session.token; sessionReady = true; }
+catch (error) { showError(error); $('word-error').textContent = error instanceof Error ? error.message : String(error); $('word-error').hidden = false; }
 updateButtons();
+initWordMode({ api, post, runJob, fileData, saveBlob, getBusy: () => state.busy, setBusy });
+for (const mode of ['word', 'excel']) $(`tab-${mode}`).addEventListener('click', () => {
+  for (const other of ['word', 'excel']) {
+    $(`${other}-workspace`).hidden = other !== mode;
+    $(`tab-${other}`).classList.toggle('selected', other === mode);
+    $(`tab-${other}`).setAttribute('aria-selected', String(other === mode));
+  }
+  $('side-files').href = mode === 'word' ? '#word-files-section' : '#files';
+  $('side-rules').href = mode === 'word' ? '#word-rules' : '#rules';
+  $('side-results').href = mode === 'word' ? '#word-results' : '#results';
+  $('side-rules').lastChild.textContent = mode === 'word' ? '选择内容' : '核对方案';
+});
+if (sessionReady) for (const id of ['tab-word', 'tab-excel', 'load-demo', 'ledger-file', 'word-files', 'word-demo', 'word-input']) $(id).disabled = false;

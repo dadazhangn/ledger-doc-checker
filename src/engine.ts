@@ -254,7 +254,7 @@ export function runCheck(batch: Batch, rawPlan: unknown): Report {
   const different = findings.filter((f) => f.status === 'different').length;
   const unverifiable = findings.filter((f) => f.status === 'unverifiable').length;
   const complete = unverifiable === 0 && batch.errors.length === 0 && findings.length > 0;
-  return { schemaVersion: 1, engineVersion: '0.1.0', planHash: hash(JSON.stringify(plan)), files: batch.files,
+  return { schemaVersion: 1, engineVersion: '0.2.0', planHash: hash(JSON.stringify(plan)), files: batch.files,
     scope: '仅核对方案指定的字段和首行为表头的正文普通明细表；明细按所属对象覆盖该对象全部数据行（含隐藏/筛选行）。页眉页脚、图片、文本框、嵌套/纵向合并表格与真实页码不在支持范围。',
     plan, findings, fileErrors: batch.errors,
     summary: { equal, different, unverifiable, fileErrors: batch.errors.length, documents: batch.documents.length, complete,

@@ -82,10 +82,22 @@ export async function demoFiles(): Promise<{ name: string; bytes: Buffer }[]> {
     ])) },
   ];
 }
+
+export async function wordDemoFiles(): Promise<{ name: string; bytes: Buffer }[]> {
+  const makeDocument = async (softwareVersion: string, documentVersion: string) => wordBuffer(
+    paragraphXml('虚构演示资料：版本差异仅用于展示，不代表真实项目或实际结论。') +
+    tableXml([['字段', '内容'], ['项目名称', '演示项目'], ['软件版本', softwareVersion], ['文档版本', documentVersion]]),
+  );
+  return [
+    { name: '演示文档-前期.docx', bytes: await makeDocument('1.0', 'A') },
+    { name: '演示文档-后期.docx', bytes: await makeDocument('2.0', 'B') },
+  ];
+}
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const output = join(process.cwd(), 'examples');
   await mkdir(output, { recursive: true });
   for (const file of await demoFiles()) await writeFile(join(output, file.name), file.bytes);
+  for (const file of await wordDemoFiles()) await writeFile(join(output, file.name), file.bytes);
   await writeFile(join(output, 'demo-plan.json'), JSON.stringify(demoPlan, null, 2) + '\n');
-  console.log('已生成 3 份明确标注为虚构数据的演示文件和一份核对方案。');
+  console.log('已生成 Excel 核对与 Word 互核的虚构演示文件。');
 }

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createApp } from '../src/server.js';
-import { demoFiles, demoPlan } from '../scripts/generate-demo.js';
+import { demoFiles, demoPlan, wordDemoFiles } from '../scripts/generate-demo.js';
 
 test('本地服务完成导入、核对、导出，并拒绝未授权与跨站请求', async () => {
   const app = createApp(); const url = await app.listen();
@@ -38,5 +38,19 @@ test('本地服务完成导入、核对、导出，并拒绝未授权与跨站�
     const cancelled = await (await fetch(`${url}/api/jobs/${task.id}/cancel`, { method: 'POST', headers, body: '{}' })).json() as { status: string };
     assert.equal(cancelled.status, 'cancelled');
     assert.equal((await fetch(`${url}/api/jobs/${task.id}/report`, { headers })).status, 400);
+    const wordFiles = (await wordDemoFiles()).map((f) => ({ name: f.name, data: f.bytes.toString('base64') }));
+    const wordStarted = await (await fetch(`${url}/api/word/inspect`, { method: 'POST', headers, body: JSON.stringify({ files: wordFiles }) })).json() as { id: string };
+    const wordBatch = await wait(wordStarted.id);
+    assert.equal(wordBatch.batch.documents.length, 2);
+    const selections = wordBatch.batch.documents.map((doc: { id: string }, index: number) => ({ documentId: doc.id,
+      category: 'softwareVersion', segmentId: 'body:t:1:r:3:c:2:0', value: index ? '2.0' : '1.0', subject: '演示软件', stage: index ? '后期' : '前期' }));
+    const compared = await (await fetch(`${url}/api/word/compare`, { method: 'POST', headers, body: JSON.stringify({ batchId: wordBatch.batchId, selections }) })).json() as { id: string };
+    const wordReport = await wait(compared.id);
+    assert.equal(wordReport.judgment, 'human-review');
+    assert.equal(wordReport.differences.length, 1);
+    const wordExport = await fetch(`${url}/api/jobs/${compared.id}/report?format=html`, { headers });
+    assert.match(await wordExport.text(), /人工判断/);
+    const wrongMode = await fetch(`${url}/api/word/compare`, { method: 'POST', headers, body: JSON.stringify({ batchId: batch.batchId, selections }) });
+    assert.equal(wrongMode.status, 400);
   } finally { await app.close(); }
 });

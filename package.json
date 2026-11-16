@@ -1,25 +1,31 @@
 {
   "name": "ledger-doc-checker",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "license": "MIT",
-  "repository": { "type": "git", "url": "https://github.com/dadazhangn/ledger-doc-checker.git" },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dadazhangn/ledger-doc-checker.git"
+  },
   "type": "module",
-  "description": "Local Excel-to-Word consistency checks with explicit mappings and source evidence.",
-  "engines": { "node": ">=20.17.0" },
+  "description": "Local Word document comparisons and Excel-to-Word checks with explicit mappings and source evidence.",
+  "engines": {
+    "node": ">=20.17.0"
+  },
   "scripts": {
     "dev": "tsx src/server.ts",
     "build": "tsc && node scripts/copy-ui.mjs",
     "start": "node dist/src/server.js",
     "demo:generate": "tsx scripts/generate-demo.ts",
     "pretest": "npm run build",
-    "test": "tsx --test test/core.test.ts test/server.test.ts",
+    "test": "tsx --test test/core.test.ts test/word-compare.test.ts test/server.test.ts",
     "test:ui": "playwright test",
     "check": "tsc --noEmit"
   },
   "dependencies": {
     "exceljs": "^4.4.0",
     "saxes": "^6.0.0",
+    "word-extractor": "1.0.4",
     "yauzl": "^3.2.0"
   },
   "devDependencies": {
